@@ -3,243 +3,263 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>사다리 게임 시뮬레이터 — 큰 수의 법칙 캠페인</title>
+  <title>큰 수의 법칙 — 사다리 게임 시뮬레이터</title>
   <style>
-    :root{--bg:#0f1724;--card:#0b1220;--accent:#60a5fa;--muted:#94a3b8;--danger:#fb7185}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;background:linear-gradient(180deg,#071126 0%, #031024 100%);color:#e6eef8;margin:0;padding:28px;}
+    :root{--bg:#f7f9fc;--card:#fff;--accent:#1464f4;--danger:#e23b3b}
+    body{font-family:system-ui,-apple-system,'Malgun Gothic','Noto Sans KR',sans-serif;background:var(--bg);margin:0;padding:24px;color:#111}
     .wrap{max-width:980px;margin:0 auto}
-    header{display:flex;align-items:center;gap:18px}
-    h1{margin:0;font-size:20px}
-    p.lead{margin:6px 0 18px;color:var(--muted)}
-    .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);padding:16px;border-radius:12px;margin-bottom:16px}
-    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    label{font-size:13px;color:var(--muted)}
-    input[type=number], select{padding:8px;border-radius:8px;background:#071022;border:1px solid rgba(255,255,255,0.04);color:#e6eef8}
-    button{background:var(--accent);border:none;padding:10px 12px;border-radius:10px;color:#04233a;cursor:pointer;font-weight:600}
-    button.secondary{background:#1f2937;color:#e6eef8}
-    .board-wrap{display:flex;gap:18px;align-items:flex-start}
-    .board{width:420px;height:420px;background:linear-gradient(180deg,#071526,#021023);border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
-    svg{width:100%;height:100%}
-    .stats{flex:1}
-    .bar{height:28px;background:#0b1726;border-radius:8px;display:flex;align-items:center;padding:4px;margin-bottom:8px}
-    .bar > .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent),#3b82f6);display:flex;align-items:center;padding-left:8px;color:#041022;font-weight:700}
-    .small{font-size:13px;color:var(--muted)}
-    footer{margin-top:14px;color:var(--muted);font-size:13px}
-    .note{background:rgba(251,113,133,0.06);border-left:4px solid var(--danger);padding:10px;border-radius:8px;color:#ffdfe6}
+    .card{background:var(--card);border-radius:12px;box-shadow:0 6px 20px rgba(20,20,40,0.06);padding:18px;margin-bottom:18px}
+    h1{margin:0 0 8px;font-size:20px}
+    .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    label{font-size:13px}
+    input[type=number]{padding:8px;border-radius:6px;border:1px solid #ddd;width:140px}
+    select{padding:8px;border-radius:6px;border:1px solid #ddd}
+    button{background:var(--accent);color:#fff;border:0;padding:10px 12px;border-radius:8px;cursor:pointer}
+    button.secondary{background:#f0f2f7;color:#111}
+    .status{display:flex;gap:12px;align-items:center}
+    .balance{font-weight:700;font-size:18px}
+    canvas{background:#fff;border-radius:8px;display:block;margin:14px 0}
+    .small{font-size:13px;color:#555}
+    .history{max-height:180px;overflow:auto;padding:8px;border-radius:8px;background:#fbfdff;border:1px solid #eef3ff}
+    .stat-grid{display:flex;gap:12px;flex-wrap:wrap}
+    .stat{flex:1;min-width:140px;background:#fbfbfc;padding:10px;border-radius:8px;border:1px solid #eee}
+    progress{width:100%;height:14px}
+    .danger{color:var(--danger)}
+    footer{font-size:12px;color:#666;margin-top:10px}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header>
-      <div>
-        <h1>사다리 게임 시뮬레이터 — 큰 수의 법칙(Law of Large Numbers) 캠페인</h1>
-        <p class="lead">컴퓨터공학과 진로를 가진 모둠을 위한 웹페이지. 사다리 게임을 무작위로 여러 번 돌려 결과 분포가 수렴하는 모습을 보여주어 도박의 위험성을 설명합니다.</p>
+    <div class="card">
+      <h1>큰 수의 법칙 — 사다리 게임 시뮬레이터</h1>
+      <p class="small">목적: 사다리 게임(2출발 × 2도착)을 시각화하고, <strong>반복 시행</strong>을 통해 큰 수의 법칙이 어떻게 작동하는지 보여줍니다. (시뮬레이션/교육용)</p>
+      <div class="controls" style="margin-top:12px">
+        <label>잔액: <span id="balance" class="balance">500,000원</span></label>
+        <label>베팅금액: <input id="bet" type="number" min="100" step="100" value="10000">원</label>
+        <label>시작선: <select id="startSelect"><option value="0">왼쪽</option><option value="1">오른쪽</option></select></label>
+        <label>배당률(승리시 총지급): <input id="multiplier" type="number" step="0.01" value="1.8" min="1.01">배</label>
+        <button id="playBtn">한번 실행</button>
+        <button id="simBtn" class="secondary">대량 시뮬레이션</button>
       </div>
-    </header>
+      <div class="small" style="margin-top:10px">설정 설명: 배당률 1.8배는 예시입니다. 승리 시에는 (베팅금 × 배당률)만큼 계좌에 더해지고, 패배 시에는 베팅금 전액이 차감됩니다.</div>
+    </div>
 
-    <section class="panel">
-      <div class="controls">
-        <label>열 수 (플레이어 수):
-          <input id="cols" type="number" min="2" max="12" value="5" />
-        </label>
-        <label>행 수 (사다리 단계):
-          <input id="rows" type="number" min="3" max="30" value="12" />
-        </label>
-        <label>시뮬레이션 횟수:
-          <input id="trials" type="number" min="1" max="1000000" value="2000" />
-        </label>
-        <button id="runSim">시뮬레이션 실행</button>
-        <button id="single" class="secondary">한 번 실행</button>
-        <button id="regen" class="secondary">사다리 새로 만들기</button>
-        <div style="margin-left:auto;text-align:right">
-          <div class="small">결과는 무작위성이지만, 표본 수를 키울수록 상대도수는 기대확률에 수렴합니다.</div>
+    <div class="card">
+      <canvas id="ladderCanvas" width="920" height="220"></canvas>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
+        <div class="stat-grid" style="flex:1">
+          <div class="stat">총 플레이: <div id="totalPlays">0</div></div>
+          <div class="stat">승리: <div id="wins">0</div></div>
+          <div class="stat">패배: <div id="losses">0</div></div>
+          <div class="stat">승률(실험적): <div id="winRate">0%</div>
+            <progress id="winProg" value="0" max="100"></progress>
+          </div>
+        </div>
+        <div style="width:260px">
+          <div class="small">최근 결과</div>
+          <div class="history" id="history"></div>
         </div>
       </div>
-    </section>
+      <footer>시작점 2개, 도착점 2개. 각 시도마다 사다리(가로 연결선)는 무작위로 생성됩니다.</footer>
+    </div>
 
-    <div class="board-wrap">
-      <div class="board panel" id="boardPanel">
-        <svg id="ladderSvg" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="card">
+      <h2 style="font-size:16px;margin:0 0 8px">대량 시뮬레이션 (큰 수의 법칙 확인)</h2>
+      <div style="display:flex;gap:12px;align-items:center">
+        <label>시행 횟수: <input id="simCount" type="number" value="1000" min="1" step="1"></label>
+        <button id="runSim">실행</button>
+        <button id="stopSim" class="secondary" disabled>중지</button>
       </div>
-
-      <div class="stats panel">
-        <h3 style="margin-top:0">통계·결과</h3>
-        <div id="bars"></div>
-        <div style="margin-top:10px" class="small">시행 횟수: <span id="total">0</span></div>
-        <div style="margin-top:10px" class="note">
-          <strong>캠페인 메시지:</strong> 도박은 장기적으로 불리한 기대값과 높은 분산을 동반합니다. 큰 수의 법칙은 표본이 커질 때 상대도수가 어떤 값(기대값)에 가까워진다는 것을 의미합니다. 무작위 게임에서 단기간의 이득은 우연이지만, 반복하면 얻을 수 있는 평균은 예측 가능합니다 — 대부분의 경우 개인에게 불리합니다.
+      <div class="small" style="margin-top:8px">시뮬레이션 결과는 오른쪽에 표로 쌓이며, 반복 시행이 늘어날수록 실험적 승률이 이론값(예: 50%)에 수렴하는지 확인할 수 있습니다.</div>
+      <div style="margin-top:12px;display:flex;gap:12px">
+        <div style="flex:1">
+          <div id="simLog" class="history"></div>
+        </div>
+        <div style="width:220px">
+          <div class="stat">초기 자금: <div id="initBalance">500,000원</div></div>
+          <div class="stat">최종 자금: <div id="finalBalance">500,000원</div></div>
         </div>
       </div>
     </div>
-
-    <footer class="panel">
-      <div class="small">이 페이지는 교육용으로 제작되었습니다. 코드를 수정하여 디자인, 메시지, 보상 구조(결과 값)를 바꿀 수 있습니다.</div>
-    </footer>
   </div>
 
   <script>
-    // 사다리 생성과 시뮬레이션: 기본 사다리(열 cols, 행 rows)에서 좌우로 무작위 가로선을 배치
-    // 플레이어는 위에서부터 내려오며 가로선이 있으면 좌우로 이동.
+    // 초기 설정
+    const STARTING_BALANCE = 500000;
+    let balance = STARTING_BALANCE;
+    const balanceEl = document.getElementById('balance');
+    const betEl = document.getElementById('bet');
+    const startSel = document.getElementById('startSelect');
+    const multiplierEl = document.getElementById('multiplier');
+    const playBtn = document.getElementById('playBtn');
+    const simBtn = document.getElementById('simBtn');
 
-    const svg = document.getElementById('ladderSvg');
-    const colsIn = document.getElementById('cols');
-    const rowsIn = document.getElementById('rows');
-    const trialsIn = document.getElementById('trials');
-    const runSim = document.getElementById('runSim');
-    const singleBtn = document.getElementById('single');
-    const regen = document.getElementById('regen');
-    const bars = document.getElementById('bars');
-    const totalLabel = document.getElementById('total');
+    const totalPlaysEl = document.getElementById('totalPlays');
+    const winsEl = document.getElementById('wins');
+    const lossesEl = document.getElementById('losses');
+    const winRateEl = document.getElementById('winRate');
+    const winProg = document.getElementById('winProg');
+    const historyEl = document.getElementById('history');
 
-    let cols = parseInt(colsIn.value,10);
-    let rows = parseInt(rowsIn.value,10);
-    let ladder = []; // rows x (cols-1) -> whether a rung exists between i and i+1 at that row
-    let counts = [];
+    const simCountEl = document.getElementById('simCount');
+    const simLog = document.getElementById('simLog');
+    const initBalEl = document.getElementById('initBalance');
+    const finalBalEl = document.getElementById('finalBalance');
+    const runSimBtn = document.getElementById('runSim');
+    const stopSimBtn = document.getElementById('stopSim');
 
-    function randBool(p=0.35){return Math.random() < p}
+    balanceEl.textContent = formatKRW(balance);
+    initBalEl.textContent = formatKRW(STARTING_BALANCE);
+    finalBalEl.textContent = formatKRW(STARTING_BALANCE);
 
-    function makeLadder(){
-      cols = Math.min(12, Math.max(2, parseInt(colsIn.value||5,10)));
-      rows = Math.min(40, Math.max(3, parseInt(rowsIn.value||12,10)));
-      ladder = Array.from({length:rows}, ()=>Array.from({length:cols-1}, ()=>false));
-      // 랜덤 가로선 배치: 같은 row에서 인접 두 가로선은 허용하지 않음 (교차 금지)
-      for(let r=0;r<rows;r++){
-        for(let c=0;c<cols-1;c++){
-          if(c>0 && ladder[r][c-1]){ // 바로 왼쪽에 가로선이 있으면 건너뛴다
-            ladder[r][c]=false; continue;
-          }
-          ladder[r][c]=randBool(0.35);
-        }
-      }
-      counts = Array.from({length:cols}, ()=>0);
-      render();
-    }
+    // 통계
+    let totalPlays = 0, wins = 0, losses = 0;
 
-    function render(highlightPaths){
-      // draw ladder in svg
-      svg.innerHTML='';
-      const W=400, H=400, left=40, right=W-40, top=20, bottom=H-20;
-      const gapX = (right-left)/(cols-1);
-      const gapY = (bottom-top)/(rows-1);
+    // 캔버스 사다리 그리기
+    const canvas = document.getElementById('ladderCanvas');
+    const ctx = canvas.getContext('2d');
+    const cols = 2; // 시작선 개수
+    const rows = 12; // 칸 수
 
-      // vertical lines
-      for(let c=0;c<cols;c++){
-        const x=left + c*gapX;
-        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-        line.setAttribute('x1',x); line.setAttribute('y1',top); line.setAttribute('x2',x); line.setAttribute('y2',bottom);
-        line.setAttribute('stroke','#2e4a66'); line.setAttribute('stroke-width','2');
-        svg.appendChild(line);
-      }
-      // horizontal rungs
-      for(let r=0;r<rows;r++){
-        for(let c=0;c<cols-1;c++){
-          if(ladder[r][c]){
-            const x1 = left + c*gapX;
-            const x2 = left + (c+1)*gapX;
-            const y = top + r*gapY;
-            const h = document.createElementNS('http://www.w3.org/2000/svg','line');
-            h.setAttribute('x1',x1); h.setAttribute('x2',x2); h.setAttribute('y1',y); h.setAttribute('y2',y);
-            h.setAttribute('stroke','#6fb0ff'); h.setAttribute('stroke-width','3');
-            svg.appendChild(h);
-          }
-        }
-      }
-
-      // labels at top and bottom
-      for(let c=0;c<cols;c++){
-        const x=left + c*gapX;
-        const t1 = document.createElementNS('http://www.w3.org/2000/svg','text');
-        t1.setAttribute('x',x); t1.setAttribute('y',top-8);
-        t1.setAttribute('text-anchor','middle'); t1.setAttribute('font-size','12'); t1.setAttribute('fill','#cfe8ff');
-        t1.textContent = String(c+1);
-        svg.appendChild(t1);
-
-        const t2 = document.createElementNS('http://www.w3.org/2000/svg','text');
-        t2.setAttribute('x',x); t2.setAttribute('y',bottom+16);
-        t2.setAttribute('text-anchor','middle'); t2.setAttribute('font-size','12'); t2.setAttribute('fill','#cfe8ff');
-        t2.textContent = String(c+1);
-        svg.appendChild(t2);
-      }
-
-      // if highlightPaths: draw small circles tracing sample paths
-      if(Array.isArray(highlightPaths)){
-        highlightPaths.forEach((pos,i)=>{
-          const colx = left + pos*gapX;
-          const y = bottom + 28 + (i*6);
-          const circ = document.createElementNS('http://www.w3.org/2000/svg','circle');
-          circ.setAttribute('cx',colx); circ.setAttribute('cy',y); circ.setAttribute('r',3);
-          circ.setAttribute('fill','#ffd166');
-          svg.appendChild(circ);
-        });
-      }
-    }
-
-    function runOne(startCol){
-      // startCol is index 0..cols-1
-      let pos = startCol;
-      for(let r=0;r<rows;r++){
-        if(pos>0 && ladder[r][pos-1]){ pos = pos-1; continue; }
-        if(pos<cols-1 && ladder[r][pos]){ pos = pos+1; continue; }
-        // else stay
-      }
-      return pos;
-    }
-
-    function updateBars(){
-      bars.innerHTML='';
-      const total = counts.reduce((a,b)=>a+b,0);
-      totalLabel.textContent = total;
+    function drawLadder(rungs) {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const margin = 40;
+      const w = canvas.width - margin*2;
+      const h = canvas.height - margin*2;
+      const colX = [];
+      for(let i=0;i<cols;i++) colX.push(margin + i*(w/(cols-1)));
+      // 세로선
+      ctx.lineWidth = 4; ctx.strokeStyle = '#333';
       for(let i=0;i<cols;i++){
-        const perc = total>0? (counts[i]/total*100):0;
-        const bar = document.createElement('div'); bar.className='bar';
-        const fill = document.createElement('div'); fill.className='fill';
-        fill.style.width = Math.max(6,perc)+'%';
-        fill.textContent = `${i+1} : ${counts[i]} (${perc.toFixed(2)}%)`;
-        bar.appendChild(fill);
-        bars.appendChild(bar);
+        ctx.beginPath(); ctx.moveTo(colX[i], margin); ctx.lineTo(colX[i], margin+h); ctx.stroke();
       }
+      // 가로 구분선
+      ctx.lineWidth = 1; ctx.strokeStyle = '#ddd';
+      for(let r=0;r<=rows;r++){
+        const y = margin + r*(h/rows);
+        ctx.beginPath(); ctx.moveTo(colX[0]-20,y); ctx.lineTo(colX[cols-1]+20,y); ctx.stroke();
+      }
+      // 가로 연결선 (rungs)
+      ctx.lineWidth = 6; ctx.strokeStyle = '#1464f4';
+      rungs.forEach(obj=>{
+        const y = margin + obj.row*(h/rows) + (h/rows)/2;
+        const x1 = colX[obj.from]; const x2 = colX[obj.to];
+        ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(x2,y); ctx.stroke();
+      });
+      // 레이블
+      ctx.fillStyle='#111'; ctx.font='14px system-ui'; ctx.textAlign='center';
+      ctx.fillText('시작', colX[0], 20); ctx.fillText('시작', colX[1], 20);
+      ctx.fillText('도착 A', colX[0], canvas.height-8); ctx.fillText('도착 B', colX[1], canvas.height-8);
     }
 
-    function simulate(n){
-      const start = Date.now();
-      for(let t=0;t<n;t++){
-        const s = Math.floor(Math.random()*cols);
-        const end = runOne(s);
-        counts[end]++;
+    // 무작위 사다리 생성: 가로 연결선(rungs) 배열 반환
+    function generateRandomRungs(rows){
+      // 각 row에 0 혹은 1개의 연결을 둘 확률을 둡니다. (2열이므로 from=0,to=1)
+      const rungs = [];
+      for(let r=0;r<rows;r++){
+        if(Math.random() < 0.5){ // 50% 확률로 가로 연결이 있는 row
+          rungs.push({row:r,from:0,to:1});
+        }
       }
-      updateBars();
-      console.log('sim done in',Date.now()-start,'ms');
+      return rungs;
     }
 
-    // Hook up UI
-    runSim.addEventListener('click', ()=>{
-      const n = Math.min(1000000, Math.max(1, parseInt(trialsIn.value||1000,10)));
-      simulate(n);
-    });
-
-    singleBtn.addEventListener('click', ()=>{
-      // run one game for each starting column once and visualize end positions
-      const paths = [];
-      for(let s=0;s<cols;s++){
-        const end = runOne(s);
-        counts[end]++;
-        paths.push(end);
+    // 시작 위치(0 or 1)를 주면 도착(0 or 1) 반환
+    function traverse(start, rungs){
+      let pos = start;
+      // rungs는 row순서대로 정렬되어 있다고 가정
+      const rowsArr = Array.from({length:rows},(_,i)=>i);
+      for(let r=0;r<rows;r++){
+        // 해당 row에 연결이 있으면 위치가 바뀝        const has = rungs.find(x=>x.row===r);
+        if(has){ pos = 1 - pos; }
       }
-      render(paths);
-      updateBars();
+      return pos; // 0 or 1
+    }
+
+    function formatKRW(n){ return n.toLocaleString('ko-KR') + '원'; }
+
+    function updateStats(){
+      totalPlaysEl.textContent = totalPlays;
+      winsEl.textContent = wins;
+      lossesEl.textContent = losses;
+      const rate = totalPlays ? (wins/totalPlays*100) : 0;
+      winRateEl.textContent = rate.toFixed(2) + '%';
+      winProg.value = rate;
+    }
+
+    function addHistory(text){
+      const div = document.createElement('div');
+      div.textContent = text;
+      simLog.prepend(div.cloneNode(true)); // simLog에 복제
+      historyEl.prepend(div);
+      // 길이 유지
+      if(historyEl.childElementCount>50) historyEl.removeChild(historyEl.lastChild);
+      if(simLog.childElementCount>300) simLog.removeChild(simLog.lastChild);
+    }
+
+    // 한 번 실행
+    playBtn.addEventListener('click', ()=>{
+      const bet = Number(betEl.value);
+      if(!Number.isFinite(bet) || bet<=0){ alert('유효한 베팅 금액을 입력하세요.'); return; }
+      if(bet > balance){ alert('잔액보다 큰 금액은 베팅할 수 없습니다.'); return; }
+      const start = Number(startSel.value);
+      const multiplier = Number(multiplierEl.value);
+      // 사다리 생성 및 결과
+      const rungs = generateRandomRungs(rows);
+      drawLadder(rungs);
+      const end = traverse(start, rungs);
+      // 승리 조건: 예시로 도착 0이 승리(왼쪽), 1은 패배 — 사용자가 이해하기 쉽게 랜덤화하지 않고, 시작과 도착 관점에서 결과를 판단합니다.
+      const isWin = (end === 0); // 왼쪽 도착을 '승리'로 정의
+
+      totalPlays++; if(isWin){ wins++; const payout = Math.round(bet * multiplier); balance += (payout - bet); // 결과: 승리하면 배당만큼 받음 (자금에 순증분은 payout - bet)
+        addHistory(`[승] 베팅 ${formatKRW(bet)} → 지급 ${formatKRW(payout)} (잔액 ${formatKRW(balance)})`);
+      } else { losses++; balance -= bet; addHistory(`[패] 베팅 ${formatKRW(bet)} → 잃음 ${formatKRW(bet)} (잔액 ${formatKRW(balance)})`); }
+      balanceEl.textContent = formatKRW(balance);
+      finalBalEl.textContent = formatKRW(balance);
+      updateStats();
     });
 
-    regen.addEventListener('click', ()=>{ makeLadder(); });
+    // 시뮬레이션 (대량)
+    let simRunning = false;
+    runSimBtn.addEventListener('click', async ()=>{
+      const N = Number(simCountEl.value) || 0;
+      if(N<=0){ alert('시행 횟수를 1 이상으로 설정하세요.'); return; }
+      // 시뮬레이션은 잔액에 반영되는 실제 베팅 시뮬레이션입니다.
+      simRunning = true; runSimBtn.disabled = true; stopSimBtn.disabled = false; simLog.textContent = '';
+      let localWins = 0, localLosses = 0; let localTotal = 0; let localBalance = balance; // 시뮬레이션 시작 전 잔액
+      const bet = Number(betEl.value);
+      const multiplier = Number(multiplierEl.value);
+      for(let i=0;i<N;i++){
+        if(!simRunning) break;
+        const rungs = generateRandomRungs(rows);
+        const end = traverse(Number(startSel.value), rungs);
+        const isWin = (end === 0);
+        localTotal++;
+        if(isWin){ localWins++; const payout = Math.round(bet * multiplier); localBalance += (payout - bet); }
+        else { localLosses++; localBalance -= bet; }
+        if(i % Math.max(1,Math.floor(N/100)) === 0){ // 중간중간 로그
+          const winRate = (localWins/localTotal*100).toFixed(2);
+          simLog.prepend(document.createElement('div')).firstChild.textContent = `진행: ${localTotal}/${N}, 승률: ${winRate}% , 예상잔액: ${formatKRW(localBalance)}`;
+        }
+        // UI 반영 (느리게 하지 않기 위해 짧은 await)
+        if(i % 200 === 0) await new Promise(r=>setTimeout(r,0));
+      }
+      // 반영
+      totalPlays += localTotal; wins += localWins; losses += localLosses; balance = localBalance;
+      balanceEl.textContent = formatKRW(balance); finalBalEl.textContent = formatKRW(balance);
+      updateStats();
+      runSimBtn.disabled = false; stopSimBtn.disabled = true; simRunning = false;
+      addHistory(`[시뮬] ${N}회 - 승 ${localWins}, 패 ${localLosses}, 잔액 ${formatKRW(balance)}`);
+    });
+    stopSimBtn.addEventListener('click', ()=>{ simRunning = false; runSimBtn.disabled = false; stopSimBtn.disabled = true; addHistory('[시뮬] 사용자가 중지했습니다.'); });
 
-    colsIn.addEventListener('change', ()=>{ makeLadder(); });
-    rowsIn.addEventListener('change', ()=>{ makeLadder(); });
+    // 초기 그림
+    drawLadder(generateRandomRungs(rows));
 
-    // 초기화
-    makeLadder();
-
-    // 교육용: 사용자가 표본수를 올리면 큰 수의 법칙을 직접 확인할 수 있음.
-    // 예: trials=2000 이상으로 늘리면 분포의 안정화(수렴) 경향을 관찰할 수 있음.
-
+    // 시각적 설명: 이 게임에서 이론적 승률을 계산해봄
+    // 주의문구
+    const warn = document.createElement('div'); warn.className='card small danger'; warn.style.marginTop='12px'; warn.style.padding='10px'; warn.textContent = '주의: 이 시뮬레이터는 교육용입니다. 실제 도박은 금전적·법적·사회적 피해를 유발할 수 있습니다.';
+    document.querySelector('.wrap').appendChild(warn);
   </script>
 </body>
 </html>
