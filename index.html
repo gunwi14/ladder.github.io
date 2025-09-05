@@ -32,6 +32,11 @@
       font-weight: bold;
       color: darkblue;
     }
+    #stats {
+      margin-top: 15px;
+      font-size: 18px;
+      color: darkgreen;
+    }
   </style>
 </head>
 <body>
@@ -45,9 +50,12 @@
   <button onclick="play('짝')">짝</button>
 
   <div id="result"></div>
+  <div id="stats"></div>
 
   <script>
     let balance = 500000; // 초기 지원금 50만원
+    let totalGames = 0;
+    let winCount = 0;
 
     function play(choice) {
       const betAmount = parseInt(document.getElementById("bet").value);
@@ -67,16 +75,24 @@
 
       let message = `뽑힌 숫자: ${number} → 결과: ${result}<br>`;
 
+      totalGames++; // 게임 횟수 증가
+
       if (choice === result) {
-        balance += betAmount; // 이기면 베팅 금액만큼 이득 (2배 돌려받는 효과)
+        balance += betAmount; // 승리 시: 베팅 금액만큼 이익
+        winCount++;
         message += `🎉 성공! ${betAmount} 원을 획득했습니다.`;
       } else {
-        balance -= betAmount; // 지면 베팅 금액 잃음
+        balance -= betAmount; // 패배 시: 베팅 금액 잃음
         message += `😢 실패... ${betAmount} 원을 잃었습니다.`;
       }
 
+      // 승률 계산
+      const winRate = ((winCount / totalGames) * 100).toFixed(2);
+
       document.getElementById("result").innerHTML = message;
       document.getElementById("balance").textContent = balance;
+      document.getElementById("stats").innerHTML =
+        `총 게임 수: ${totalGames} | 승리 수: ${winCount} | 승률: ${winRate}%`;
 
       // 파산 체크
       if (balance <= 0) {
