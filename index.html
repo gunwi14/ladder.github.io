@@ -1,302 +1,46 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>구슬 홀/짝 시뮬레이터 — 큰 수의 법칙 교육용</title>
+  <meta charset="UTF-8">
+  <title>홀짝 게임</title>
   <style>
-    :root{--bg:#f5f7fb;--card:#ffffff;--accent:#2563eb;--danger:#dc2626;--muted:#6b7280}
-    body{font-family:Inter,system-ui,Apple SD Gothic Neo,'Noto Sans KR',sans-serif;background:var(--bg);margin:0;padding:24px;color:#0f172a}
-    .wrap{max-width:1000px;margin:0 auto}
-    header{display:flex;gap:16px;align-items:center;margin-bottom:18px}
-    h1{font-size:20px;margin:0}
-    .card{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.06);margin-bottom:16px}
-    label{display:block;font-size:13px;margin:8px 0 6px;color:var(--muted)}
-    .controls{display:flex;gap:12px;flex-wrap:wrap}
-    select,input[type=number]{padding:8px;border-radius:8px;border:1px solid #e6eef8;min-width:140px}
-    button{background:var(--accent);color:white;border:0;padding:10px 14px;border-radius:10px;cursor:pointer}
-    button.secondary{background:#334155}
-    .stats{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
-    .stat{background:#f8fafc;padding:10px;border-radius:8px;min-width:160px}
-    #chart{width:100%;height:220px;border-radius:8px;background:white;display:block}
-    .warn{background:#fff4f4;border-left:4px solid var(--danger);padding:10px;margin-top:12px;border-radius:6px;color:var(--danger)}
-    footer{font-size:13px;color:var(--muted);margin-top:12px}
-    .small{font-size:13px;color:var(--muted)}
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 100px;
+    }
+    button {
+      font-size: 20px;
+      padding: 10px 20px;
+      margin: 10px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 30px;
+      font-size: 24px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>구슬 홀/짝 시뮬레이터 — 큰 수의 법칙 교육용</h1>
-    </header>
+  <h1>홀짝 게임</h1>
+  <p>홀 또는 짝을 선택하세요</p>
+  <button onclick="play('홀')">홀</button>
+  <button onclick="play('짝')">짝</button>
 
-    <div class="card">
-      <strong>프로젝트 목적</strong>
-      <p class="small">이 시뮬레이터는 도박의 위험성을 알리기 위한 교육용입니다. 모든 금전은 가상토큰이며, 실제 현금/출금 기능은 없습니다. 많은 시행을 통해 경험적 확률이 이론적 확률(0.5)에 수렴함을 관찰하세요 — 이것이 큰 수의 법칙입니다.</p>
-      <div style="margin-top:8px">
-        <label>구슬 종류(1부터 N까지 번호)</label>
-        <input id="numMarbles" type="number" min="2" value="10" />
-      </div>
-
-      <div style="margin-top:12px" class="controls">
-        <div>
-          <label>선택(베팅)</label>
-          <select id="choice">
-            <option value="odd">홀(odd)</option>
-            <option value="even">짝(even)</option>
-          </select>
-        </div>
-
-        <div>
-          <label>한 회차에 뽑는 구슬 수 (한 회의 '뽑기' 횟수)</label>
-          <input id="drawsPerRound" type="number" min="1" value="1" />
-        </div>
-
-        <div>
-          <label>베팅할 가상토큰</label>
-          <input id="betAmount" type="number" min="0" value="10" />
-        </div>
-
-        <div>
-          <label>시행 횟수(한 번에 실행)</label>
-          <input id="trials" type="number" min="1" value="1000" />
-        </div>
-
-        <div style="align-self:end">
-          <button id="run">시뮬레이션 시작</button>
-          <button class="secondary" id="stop">중지</button>
-        </div>
-      </div>
-
-      <div class="stats">
-        <div class="stat">
-          <div class="small">가상 토큰 잔액</div>
-          <div id="balance" style="font-weight:700;font-size:18px">1000</div>
-        </div>
-
-        <div class="stat">
-          <div class="small">누적 시행</div>
-          <div id="totalTrials" style="font-weight:700;font-size:18px">0</div>
-        </div>
-
-        <div class="stat">
-          <div class="small">승리 횟수</div>
-          <div id="wins" style="font-weight:700;font-size:18px">0</div>
-        </div>
-
-        <div class="stat">
-          <div class="small">현재 경험적 확률 (승/시행)</div>
-          <div id="empProb" style="font-weight:700;font-size:18px">-</div>
-        </div>
-      </div>
-
-      <div style="margin-top:12px">
-        <canvas id="chart"></canvas>
-        <div class="small" style="margin-top:8px">
-          그래프: 시행 수에 따른 경험적 확률(승률)의 변화. 점선은 이론적 확률 0.5입니다.
-        </div>
-      </div>
-
-      <div class="warn">
-        <strong>주의:</strong> 이 시뮬레이터는 교육 목적입니다. 실제 도박은 중독성과 경제적 손실을 초래합니다. 캠페인 콘텐츠에 이 시뮬레이터를 사용해 '왜 많은 시행이 있어도 개인은 장기적으로 불리할 수 있는지' 설명하세요.
-      </div>
-    </div>
-
-    <div class="card small">
-      <strong>사용 설명 (짧게)</strong>
-      <ol>
-        <li>구슬 개수(N)를 정하세요 (기본 10). 구슬 번호 1~N에서 무작위로 뽑습니다.</li>
-        <li>홀/짝을 선택하고, 베팅 금액(가상 토큰)을 입력하세요. (출금 불가)</li>
-        <li>'시행 횟수'를 크게(예: 10,000 이상)으로 놓고 실행해 보세요. 경험적 확률이 0.5에 가까워지는지 관찰하세요.</li>
-      </ol>
-    </div>
-
-    <footer>
-      개발: 컴퓨터공학 진로 캠페인용 — 교육 목적. (이 파일은 로컬에서만 실행하세요)
-    </footer>
-  </div>
+  <div id="result"></div>
 
   <script>
-    // 핵심 로직: 사용자 선택에 따라 구슬을 무작위로 뽑고 홀/짝 판정.
-    const runBtn = document.getElementById('run');
-    const stopBtn = document.getElementById('stop');
-    const choiceEl = document.getElementById('choice');
-    const numMarblesEl = document.getElementById('numMarbles');
-    const drawsPerRoundEl = document.getElementById('drawsPerRound');
-    const trialsEl = document.getElementById('trials');
-    const betAmountEl = document.getElementById('betAmount');
+    function play(choice) {
+      // 1~10 중 임의의 수 뽑기
+      const number = Math.floor(Math.random() * 10) + 1;
+      const result = number % 2 === 0 ? "짝" : "홀";
 
-    const balanceEl = document.getElementById('balance');
-    const totalTrialsEl = document.getElementById('totalTrials');
-    const winsEl = document.getElementById('wins');
-    const empProbEl = document.getElementById('empProb');
-
-    let balance = 1000;
-    let totalTrials = 0;
-    let wins = 0;
-    let running = false;
-
-    balanceEl.textContent = balance;
-
-    // Chart setup (simple)
-    const canvas = document.getElementById('chart');
-    canvas.width = canvas.clientWidth * devicePixelRatio;
-    canvas.height = canvas.clientHeight * devicePixelRatio;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-
-    function drawChart(points) {
-      const w = canvas.clientWidth;
-      const h = canvas.clientHeight;
-      ctx.clearRect(0,0,w,h);
-
-      // background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0,0,w,h);
-
-      // axes
-      ctx.strokeStyle = '#e6eef8';
-      ctx.beginPath();
-      ctx.moveTo(40,10); ctx.lineTo(40,h-30); ctx.lineTo(w-10,h-30); ctx.stroke();
-
-      // horizontal grid and labels
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '12px sans-serif';
-      for (let i=0;i<=5;i++){
-        const y = 10 + (h-40)*(i/5);
-        ctx.strokeStyle = '#f1f5f9';
-        ctx.beginPath(); ctx.moveTo(40,y); ctx.lineTo(w-10,y); ctx.stroke();
-        const val = (1 - i/5).toFixed(2);
-        ctx.fillText(val, 4, y+4);
-      }
-
-      // theoretical line at 0.5
-      const y50 = 10 + (h-40)*(1 - 0.5);
-      ctx.setLineDash([4,4]);
-      ctx.strokeStyle = '#64748b';
-      ctx.beginPath(); ctx.moveTo(40,y50); ctx.lineTo(w-10,y50); ctx.stroke();
-      ctx.setLineDash([]);
-
-      if (points.length < 2) return;
-
-      // plot points (only last N to keep performance)
-      const maxX = points.length;
-      const left = 45, right = w-12;
-      const plotW = right - left;
-      ctx.strokeStyle = '#2563eb';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      for (let i=0;i<points.length;i++){
-        const x = left + (i/(maxX-1||1)) * plotW;
-        const y = 10 + (h-40)*(1 - points[i]);
-        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-      }
-      ctx.stroke();
-
-      // last value text
-      ctx.fillStyle = '#0f172a';
-      ctx.font = '13px sans-serif';
-      ctx.fillText('마지막 경험적 확률: ' + (points[points.length-1]||0).toFixed(4), left, h-8);
+      // 결과 출력
+      const message = `뽑힌 숫자: ${number} → 결과: ${result}<br>` +
+                      (choice === result ? "🎉 당신의 승리!" : "😢 당신의 패배...");
+      document.getElementById("result").innerHTML = message;
     }
-
-    // simulation function
-    function simulateBatch(batchSize, numMarbles, drawsPerRound, userChoice) {
-      // returns {wins: number, trials: number}
-      let batchWins = 0;
-      for (let t=0;t<batchSize;t++){
-        // For each trial, we perform drawsPerRound independent draws.
-        // We'll count trial as win if at least one draw in that trial matches user's choice.
-        let trialWin = false;
-        for (let d=0; d<drawsPerRound; d++){
-          // draw random marble 1..numMarbles
-          const marble = Math.floor(Math.random() * numMarbles) + 1;
-          const isOdd = (marble % 2) === 1;
-          if ((userChoice === 'odd' && isOdd) || (userChoice === 'even' && !isOdd)) {
-            trialWin = true;
-            break;
-          }
-        }
-        if (trialWin) batchWins++;
-      }
-      return {wins: batchWins, trials: batchSize};
-    }
-
-    // main runner - runs in chunks to keep UI responsive and update chart
-    async function runSimulation() {
-      if (running) return;
-      running = true;
-      runBtn.disabled = true;
-      stopBtn.disabled = false;
-
-      const numMarbles = Math.max(2, parseInt(numMarblesEl.value) || 10);
-      const drawsPerRound = Math.max(1, parseInt(drawsPerRoundEl.value) || 1);
-      const trialsToRun = Math.max(1, parseInt(trialsEl.value) || 1000);
-      const bet = Math.max(0, parseInt(betAmountEl.value) || 0);
-      const userChoice = choiceEl.value;
-
-      // Note: Payout rule (educational): win -> gain bet, lose -> lose bet
-      // (i.e., expected value per trial is zero if probability 0.5 and payout = bet).
-      // You may adjust for campaign demonstration.
-      const chunk = 200; // how many trials per chunk (keeps UI responsive)
-      let remaining = trialsToRun;
-      const points = []; // track empirical probability over time for plotting
-      // start from current totals (so running total across multiple runs is possible)
-      let currentWins = wins;
-      let currentTrials = totalTrials;
-
-      while (remaining > 0 && running) {
-        const runNow = Math.min(chunk, remaining);
-        const result = simulateBatch(runNow, numMarbles, drawsPerRound, userChoice);
-        // update totals
-        currentWins += result.wins;
-        currentTrials += result.trials;
-        // update virtual balance: simple rule: win -> +bet, lose -> -bet
-        const net = (result.wins * bet) - ((result.trials - result.wins) * bet);
-        balance += net;
-
-        // update UI
-        wins = currentWins;
-        totalTrials = currentTrials;
-        balanceEl.textContent = balance;
-        totalTrialsEl.textContent = totalTrials;
-        winsEl.textContent = wins;
-        empProbEl.textContent = (wins / Math.max(1,totalTrials)).toFixed(5);
-
-        // push point for chart
-        points.push(wins / Math.max(1,totalTrials));
-        if (points.length > 600) points.shift(); // keep chart size reasonable
-        drawChart(points);
-
-        remaining -= runNow;
-        // yield to UI
-        await new Promise(resolve => setTimeout(resolve, 10));
-      }
-
-      running = false;
-      runBtn.disabled = false;
-      stopBtn.disabled = true;
-    }
-
-    runBtn.addEventListener('click', runSimulation);
-    stopBtn.addEventListener('click', () => {
-      running = false;
-      runBtn.disabled = false;
-      stopBtn.disabled = true;
-    });
-
-    // initialize chart with empty data
-    drawChart([0]);
-
-    // Reset/clear with double click on balance (for teacher use)
-    balanceEl.addEventListener('dblclick', () => {
-      if (!confirm('모든 기록을 초기화하시겠습니까? (가상토큰, 시행, 승리 초기화)')) return;
-      balance = 1000; totalTrials = 0; wins = 0;
-      balanceEl.textContent = balance;
-      totalTrialsEl.textContent = totalTrials;
-      winsEl.textContent = wins;
-      empProbEl.textContent = '-';
-      drawChart([0]);
-    });
   </script>
 </body>
 </html>
