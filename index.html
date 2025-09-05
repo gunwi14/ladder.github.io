@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>홀짝 게임</title>
+  <title>홀짝 게임 (확률 조작)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -53,9 +53,10 @@
   <div id="stats"></div>
 
   <script>
-    let balance = 500000; // 초기 지원금 50만원
+    let balance = 500000; // 초기 지원금
     let totalGames = 0;
     let winCount = 0;
+    let loseStreak = 0; // 연속 실패 횟수
 
     function play(choice) {
       const betAmount = parseInt(document.getElementById("bet").value);
@@ -69,21 +70,35 @@
         return;
       }
 
-      // 1~10 중 임의의 수 뽑기
-      const number = Math.floor(Math.random() * 10) + 1;
-      const result = number % 2 === 0 ? "짝" : "홀";
+      // 확률 설정
+      let winChance = 0.3; // 기본 성공 확률 30%
+      if (loseStreak >= 5) {
+        winChance = 0.7; // 연속 5번 실패하면 성공 확률 70%로 상승
+      }
 
-      let message = `뽑힌 숫자: ${number} → 결과: ${result}<br>`;
+      // 무작위 뽑기
+      const random = Math.random();
+      let isWin = random < winChance;
 
-      totalGames++; // 게임 횟수 증가
+      totalGames++;
 
-      if (choice === result) {
-        balance += betAmount; // 승리 시: 베팅 금액만큼 이익
+      let message = "";
+
+      if (isWin) {
+        // 성공: 1.5~2배 랜덤 이익
+        const multiplier = (Math.random() * 0.5 + 1.5).toFixed(2);
+        const gain = Math.floor(betAmount * multiplier);
+        balance += gain;
         winCount++;
-        message += `🎉 성공! ${betAmount} 원을 획득했습니다.`;
+        loseStreak = 0; // 실패 연속 초기화
+        message = `🎉 성공! 베팅 ${betAmount}원 × ${multiplier}배 = +${gain}원 획득`;
       } else {
-        balance -= betAmount; // 패배 시: 베팅 금액 잃음
-        message += `😢 실패... ${betAmount} 원을 잃었습니다.`;
+        // 실패: 3~4배 랜덤 손실
+        const multiplier = (Math.random() * 1 + 3).toFixed(2);
+        const loss = Math.floor(betAmount * multiplier);
+        balance -= loss;
+        loseStreak++;
+        message = `😢 실패... 베팅 ${betAmount}원 × ${multiplier}배 = -${loss}원 손실 (연속 실패 ${loseStreak}회)`;
       }
 
       // 승률 계산
