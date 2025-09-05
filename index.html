@@ -7,23 +7,39 @@
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      margin-top: 100px;
+      margin-top: 60px;
     }
     button {
-      font-size: 20px;
+      font-size: 18px;
       padding: 10px 20px;
-      margin: 10px;
+      margin: 5px;
       cursor: pointer;
     }
+    input {
+      font-size: 18px;
+      padding: 5px;
+      width: 120px;
+      text-align: right;
+    }
     #result {
-      margin-top: 30px;
-      font-size: 24px;
+      margin-top: 20px;
+      font-size: 22px;
       font-weight: bold;
+    }
+    #balance {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: darkblue;
     }
   </style>
 </head>
 <body>
   <h1>홀짝 게임</h1>
+  <p>현재 금액: <span id="balance">500000</span> 원</p>
+  <p>
+    베팅 금액: <input type="number" id="bet" value="10000" min="1">
+  </p>
   <p>홀 또는 짝을 선택하세요</p>
   <button onclick="play('홀')">홀</button>
   <button onclick="play('짝')">짝</button>
@@ -31,15 +47,41 @@
   <div id="result"></div>
 
   <script>
+    let balance = 500000; // 초기 지원금 50만원
+
     function play(choice) {
+      const betAmount = parseInt(document.getElementById("bet").value);
+
+      if (isNaN(betAmount) || betAmount <= 0) {
+        alert("베팅 금액을 올바르게 입력하세요!");
+        return;
+      }
+      if (betAmount > balance) {
+        alert("보유 금액보다 큰 금액은 베팅할 수 없습니다!");
+        return;
+      }
+
       // 1~10 중 임의의 수 뽑기
       const number = Math.floor(Math.random() * 10) + 1;
       const result = number % 2 === 0 ? "짝" : "홀";
 
-      // 결과 출력
-      const message = `뽑힌 숫자: ${number} → 결과: ${result}<br>` +
-                      (choice === result ? "🎉 당신의 승리!" : "😢 당신의 패배...");
+      let message = `뽑힌 숫자: ${number} → 결과: ${result}<br>`;
+
+      if (choice === result) {
+        balance += betAmount; // 이기면 베팅 금액만큼 이득 (2배 돌려받는 효과)
+        message += `🎉 성공! ${betAmount} 원을 획득했습니다.`;
+      } else {
+        balance -= betAmount; // 지면 베팅 금액 잃음
+        message += `😢 실패... ${betAmount} 원을 잃었습니다.`;
+      }
+
       document.getElementById("result").innerHTML = message;
+      document.getElementById("balance").textContent = balance;
+
+      // 파산 체크
+      if (balance <= 0) {
+        document.getElementById("result").innerHTML += "<br><br>💀 모든 돈을 잃었습니다!";
+      }
     }
   </script>
 </body>
