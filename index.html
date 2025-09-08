@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>홀짝 게임 (확률 조작)</title>
+  <title>홀짝 게임</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -32,11 +32,6 @@
       font-weight: bold;
       color: darkblue;
     }
-    #stats {
-      margin-top: 15px;
-      font-size: 18px;
-      color: darkgreen;
-    }
   </style>
 </head>
 <body>
@@ -50,13 +45,9 @@
   <button onclick="play('짝')">짝</button>
 
   <div id="result"></div>
-  <div id="stats"></div>
 
   <script>
-    let balance = 500000; // 초기 지원금
-    let totalGames = 0;
-    let winCount = 0;
-    let loseStreak = 0; // 연속 실패 횟수
+    let balance = 500000; // 초기 지원금 50만원
 
     function play(choice) {
       const betAmount = parseInt(document.getElementById("bet").value);
@@ -70,44 +61,22 @@
         return;
       }
 
-      // 확률 설정
-      let winChance = 0.3; // 기본 성공 확률 30%
-      if (loseStreak >= 5) {
-        winChance = 0.7; // 연속 5번 실패하면 성공 확률 70%로 상승
-      }
+      // 1~10 중 임의의 수 뽑기
+      const number = Math.floor(Math.random() * 10) + 1;
+      const result = number % 2 === 0 ? "짝" : "홀";
 
-      // 무작위 뽑기
-      const random = Math.random();
-      let isWin = random < winChance;
+      let message = `뽑힌 숫자: ${number} → 결과: ${result}<br>`;
 
-      totalGames++;
-
-      let message = "";
-
-      if (isWin) {
-        // 성공: 1.5~2배 랜덤 이익
-        const multiplier = (Math.random() * 0.5 + 1.5).toFixed(2);
-        const gain = Math.floor(betAmount * multiplier);
-        balance += gain;
-        winCount++;
-        loseStreak = 0; // 실패 연속 초기화
-        message = `🎉 성공! 베팅 ${betAmount}원 × ${multiplier}배 = +${gain}원 획득`;
+      if (choice === result) {
+        balance += betAmount; // 이기면 베팅 금액만큼 이득 (2배 돌려받는 효과)
+        message += `🎉 승리! ${betAmount} 원을 획득했습니다.`;
       } else {
-        // 실패: 3~4배 랜덤 손실
-        const multiplier = (Math.random() * 1 + 3).toFixed(2);
-        const loss = Math.floor(betAmount * multiplier);
-        balance -= loss;
-        loseStreak++;
-        message = `😢 실패... 베팅 ${betAmount}원 × ${multiplier}배 = -${loss}원 손실 (연속 실패 ${loseStreak}회)`;
+        balance -= betAmount; // 지면 베팅 금액 잃음
+        message += `😢 패배... ${betAmount} 원을 잃었습니다.`;
       }
-
-      // 승률 계산
-      const winRate = ((winCount / totalGames) * 100).toFixed(2);
 
       document.getElementById("result").innerHTML = message;
       document.getElementById("balance").textContent = balance;
-      document.getElementById("stats").innerHTML =
-        `총 게임 수: ${totalGames} | 승리 수: ${winCount} | 승률: ${winRate}%`;
 
       // 파산 체크
       if (balance <= 0) {
