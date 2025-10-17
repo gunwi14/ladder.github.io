@@ -1,171 +1,289 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>홀짝 도박 시뮬레이션</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>홀짝 도박 시뮬레이션 — 사운드 안정화 버전</title>
 <style>
   body {
-    font-family: "Arial", sans-serif;
-    background: linear-gradient(135deg, #2b5876, #4e4376);
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg,#2b5876,#4e4376);
     color: white;
     text-align: center;
-    padding-top: 50px;
+    padding-top: 36px;
     overflow: hidden;
-    transition: background 0.5s ease;
   }
-  h1 { font-size: 28px; margin-bottom: 10px; }
-  #balance, #goal { font-size: 22px; margin: 8px; }
-  #result { font-size: 20px; margin: 25px; transition: all 0.5s ease; }
-  input[type="number"] {
-    padding: 10px; border-radius: 5px; border: none; font-size: 16px; width: 150px; text-align: center;
+  .card {
+    width: 380px;
+    margin: 20px auto;
+    background: rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+  }
+  h1 { margin: 0 0 8px 0; font-size: 22px; }
+  #balance,#goal { margin: 6px 0; font-size: 18px; color: #ffd166; }
+  .controls { margin-top: 12px; }
+  input[type="number"]{
+    width:160px;padding:8px;border-radius:6px;border:none;text-align:right;font-size:16px;
   }
   button {
-    padding: 12px 20px;
-    margin: 10px;
-    font-size: 18px;
-    border: none;
-    border-radius: 10px;
-    background-color: #6a11cb;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s;
+    padding:10px 18px;margin:10px;border-radius:8px;border:none;background:#ffb703;color:#112;
+    font-weight:700;cursor:pointer;font-size:16px;
   }
-  button:hover { transform: scale(1.1); background-color: #2575fc; }
-
-  /* 시각 효과 */
-  .flash {
-    animation: flash 0.25s;
-  }
-  @keyframes flash {
-    0% { background-color: rgba(255,255,255,0.7); }
-    100% { background: linear-gradient(135deg, #2b5876, #4e4376); }
-  }
-
+  button:hover{transform:translateY(-3px);transition:all .12s}
+  #result { margin-top:12px; font-size:16px; min-height:36px; }
   /* 플로팅 텍스트 */
-  .floating-text {
-    position: absolute;
-    font-size: 24px;
-    font-weight: bold;
-    pointer-events: none;
-    animation: floatUp 1.2s ease-out forwards;
-  }
-  @keyframes floatUp {
-    0% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-100px); }
-  }
+  .floating-text { position:absolute; font-size:22px; font-weight:800; pointer-events:none; animation:floatUp 1.2s ease-out forwards; text-shadow:0 2px 8px rgba(0,0,0,0.6);}
+  @keyframes floatUp { 0%{opacity:1; transform:translateY(0) scale(1)} 100%{opacity:0; transform:translateY(-120px) scale(1.05)} }
+  /* 화면 플래시 (매 배팅마다) */
+  .flash { animation: screenFlash .18s ease; }
+  @keyframes screenFlash { 0%{filter:brightness(1.6)} 100%{filter:brightness(1)} }
+  .smallnote{font-size:12px;color:#dbeafe;margin-top:6px}
 </style>
 </head>
 <body>
-  <h1>🎲 홀짝 도박 시뮬레이션 🎲</h1>
-  <div id="balance">💰 보유 금액: 500,000원</div>
-  <div id="goal">🎯 목표 금액: 5,000,000원</div>
-  <div>
-    <input type="number" id="bet" placeholder="배팅 금액 입력" min="1">
+  <div class="card" id="panel">
+    <h1>🎲 홀짝 도박 시뮬레이션</h1>
+    <div id="balance">💰 보유 금액: 500,000원</div>
+    <div id="goal">🎯 목표 금액: 5,000,000원</div>
+
+    <div class="controls">
+      <div>
+        베팅 금액: <input id="bet" type="number" min="1000" value="10000" step="1000"> 원
+      </div>
+      <div style="margin-top:10px">
+        <button id="btnOdd">홀</button>
+        <button id="btnEven">짝</button>
+      </div>
+      <div id="result" aria-live="polite"></div>
+      <div class="smallnote">※ 최소 베팅금액 1,000원 / 성공: +2배, 실패: -1.5배 (자동 초기화: 파산 또는 목표 달성)</div>
+    </div>
   </div>
-  <div>
-    <button onclick="playGame('홀')">홀</button>
-    <button onclick="playGame('짝')">짝</button>
-  </div>
-  <div id="result"></div>
 
-  <!-- 🎧 효과음 (고음질) -->
-  <audio id="betSound" src="https://assets.mixkit.co/sfx/preview/mixkit-game-click-1114.mp3" preload="auto"></audio>
-  <audio id="winSound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chime-2015.mp3" preload="auto"></audio>
-  <audio id="loseSound" src="https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.mp3" preload="auto"></audio>
+  <!-- 외부 음원 시도용 (CORS/정책 문제 있을 수 있음) -->
+  <audio id="audioBet" crossorigin="anonymous"></audio>
+  <audio id="audioWin" crossorigin="anonymous"></audio>
+  <audio id="audioLose" crossorigin="anonymous"></audio>
 
-  <script>
-    let balance = 500000;
-    let failCount = 0;
-    let winRate = 0.35;
+<script>
+/*
+  안정적 소리 재생 로직:
+  1) 페이지 로드시 오디오 src 세팅(외부 URL). (play는 사용자 액션 때 수행)
+  2) playSound(name) 호출하면 해당 <audio>로 play(). 
+     - play()가 성공하면 정상 재생.
+     - play()가 거부(rejected)되거나 에러나면, WebAudio API로 즉시 합성음 재생(폴백).
+  3) 버튼 클릭(사용자 액션)에서 반드시 playSound('bet') 먼저 호출 -> 이후 게임 로직 실행.
+*/
 
-    const balanceDisplay = document.getElementById("balance");
-    const resultDisplay = document.getElementById("result");
-    const betSound = document.getElementById("betSound");
-    const winSound = document.getElementById("winSound");
-    const loseSound = document.getElementById("loseSound");
+const audioFiles = {
+  bet: 'https://assets.mixkit.co/sfx/preview/mixkit-game-click-1114.mp3',       // 클릭
+  win: 'https://assets.mixkit.co/sfx/preview/mixkit-winning-chime-2015.mp3',    // 승리 짜잔
+  lose:'https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.mp3' // 실패 뭉툭
+};
 
-    function playGame(choice) {
-      const bet = Number(document.getElementById("bet").value);
+// Attach sources to audio elements (preload attempt)
+const aBet = document.getElementById('audioBet');
+const aWin = document.getElementById('audioWin');
+const aLose = document.getElementById('audioLose');
+aBet.src = audioFiles.bet;
+aWin.src = audioFiles.win;
+aLose.src = audioFiles.lose;
+aBet.preload = 'auto'; aWin.preload='auto'; aLose.preload='auto';
 
-      if (bet <= 0 || isNaN(bet)) {
-        alert("배팅 금액을 입력하세요!");
+// Web Audio fallback synth
+let audioCtx = null;
+function ensureAudioContext(){
+  if(!audioCtx){
+    try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e){ audioCtx = null; }
+  }
+  return audioCtx;
+}
+function synthTone({freq=440, duration=0.18, type='sine', gain=0.12}){
+  const ctx = ensureAudioContext();
+  if(!ctx) return;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.value = gain;
+  o.connect(g); g.connect(ctx.destination);
+  const now = ctx.currentTime;
+  o.start(now);
+  g.gain.setValueAtTime(gain, now);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  o.stop(now + duration + 0.02);
+}
+
+// playSound tries DOM Audio first, if fails use synth
+async function playSound(kind){
+  let el = null;
+  if(kind === 'bet') el = aBet;
+  if(kind === 'win') el = aWin;
+  if(kind === 'lose') el = aLose;
+
+  if(el){
+    try{
+      // ensure load attempt
+      // using play() returns a promise — handle reject
+      el.currentTime = 0;
+      const p = el.play();
+      if(p !== undefined){
+        await p; // if this rejects we'll fall to catch
         return;
-      }
-
-      if (balance <= bet * 0.5) {
-        alert("⚠️ 보유금이 너무 적습니다!");
-        return;
-      }
-
-      // 🔊 배팅 사운드 & 시각 효과
-      betSound.currentTime = 0;
-      betSound.play();
-      document.body.classList.add("flash");
-      setTimeout(() => document.body.classList.remove("flash"), 250);
-
-      // 🔢 결과 계산
-      const random = Math.random();
-      const outcome = random < winRate ? choice : (choice === '홀' ? '짝' : '홀');
-      const isWin = choice === outcome;
-
-      if (isWin) {
-        const gain = bet * 2;
-        balance += gain;
-        resultDisplay.innerHTML = `✅ 승리! ${gain.toLocaleString()}원 획득!`;
-        winSound.currentTime = 0;
-        winSound.play();
-        failCount = 0;
-        winRate = Math.max(0.25, winRate - 0.02);
-        showFloatingText(`+${gain.toLocaleString()}`, "lime");
       } else {
-        const loss = bet * 1.5;
-        balance -= loss;
-        resultDisplay.innerHTML = `❌ 패배... ${loss.toLocaleString()}원 손실`;
-        loseSound.currentTime = 0;
-        loseSound.play();
-        failCount++;
-        if (failCount >= 5) {
-          winRate = Math.min(0.5, winRate + 0.1);
-          failCount = 0;
-        }
-        showFloatingText(`-${loss.toLocaleString()}`, "red");
+        // Some browsers return undefined; assume played
+        return;
       }
-
-      balanceDisplay.innerHTML = `💰 보유 금액: ${balance.toLocaleString()}원`;
-
-      // 💀 파산 or 🎉 목표 달성 시 초기화
-      if (balance <= 0) {
-        alert("💀 파산하셨습니다! 다시 시작합니다.");
-        resetGame();
-      } else if (balance >= 5000000) {
-        alert("🎉 축하합니다! 5,000,000원 달성! 게임이 초기화됩니다.");
-        resetGame();
-      }
+    } catch(err){
+      // fallback to synth
+      // console.warn('Audio element failed, using synth fallback', err);
     }
+  }
+  // Fallback synth patterns per kind
+  if(kind === 'bet'){
+    synthTone({freq:880,duration:0.06,gain:0.06,type:'square'});
+  } else if(kind === 'win'){
+    synthTone({freq:880,duration:0.18,gain:0.12,type:'sine'});
+    setTimeout(()=>synthTone({freq:1320,duration:0.12,gain:0.09,type:'sine'}),90);
+  } else if(kind === 'lose'){
+    synthTone({freq:160,duration:0.20,gain:0.18,type:'sawtooth'});
+    setTimeout(()=>synthTone({freq:120,duration:0.18,gain:0.12,type:'sawtooth'}),90);
+  }
+}
 
-    function resetGame() {
-      balance = 500000;
+/* ---------------- game logic ---------------- */
+let balance = 500000;
+let failCount = 0;
+let winRate = 0.35;
+
+const balanceEl = document.getElementById('balance');
+const goalEl = document.getElementById('goal');
+const resultEl = document.getElementById('result');
+const panel = document.getElementById('panel');
+const btnOdd = document.getElementById('btnOdd');
+const btnEven = document.getElementById('btnEven');
+const betInput = document.getElementById('bet');
+
+function updateDisplays(){
+  balanceEl.textContent = `💰 보유 금액: ${balance.toLocaleString()}원`;
+  goalEl.textContent = `🎯 목표 금액: 5,000,000원`;
+}
+
+// show floating text anywhere (called every bet)
+function showFloatingText(text, color){
+  const span = document.createElement('div');
+  span.className = 'floating-text';
+  span.style.color = color;
+  span.innerText = text;
+  // pick position within viewport (avoid edges)
+  const padding = 40;
+  const left = Math.floor(Math.random()*(window.innerWidth - padding*2)) + padding;
+  const top  = Math.floor(Math.random()*(window.innerHeight - padding*2)) + padding;
+  span.style.left = left + 'px';
+  span.style.top = top + 'px';
+  document.body.appendChild(span);
+  setTimeout(()=> span.remove(), 1200);
+}
+
+function resetGame(){
+  balance = 500000;
+  failCount = 0;
+  winRate = 0.35;
+  betInput.value = 10000;
+  updateDisplays();
+  resultEl.innerHTML = '';
+}
+
+// main play (called after user clicked button)
+async function doPlay(choice){
+  const bet = Number(betInput.value);
+  if(isNaN(bet) || bet < 1000){
+    alert('최소 베팅 금액은 1,000원입니다.');
+    return;
+  }
+  if(bet > balance && balance <= 0){
+    alert('잔액이 부족합니다.');
+    return;
+  }
+
+  // play bet sound & UI flash (user gesture)
+  playSound('bet');
+  panel.classList.add('flash');
+  setTimeout(()=> panel.classList.remove('flash'), 180);
+
+  // Always show floating text for bet attempt (neutral small)
+  showFloatingText(`베팅 ${bet.toLocaleString()}원`, '#fff');
+
+  // compute outcome using winRate
+  const r = Math.random();
+  const outcome = (r < winRate) ? choice : (choice === '홀' ? '짝' : '홀');
+  const isWin = (outcome === choice);
+
+  if(isWin){
+    const gain = Math.floor(bet * 2); // success: +2배
+    balance += gain;
+    failCount = 0;
+    // play win sound
+    await playSound('win');
+    resultEl.innerHTML = `✅ 승리! +${gain.toLocaleString()}원 획득`;
+    showFloatingText(`+${gain.toLocaleString()}`, '#9cff9c');
+    // slightly decrease winRate to keep base lower, min 25%
+    winRate = Math.max(0.25, (winRate - 0.02));
+  } else {
+    const loss = Math.floor(bet * 1.5); // failure: -1.5배
+    balance -= loss;
+    failCount++;
+    await playSound('lose');
+    resultEl.innerHTML = `❌ 패배... -${loss.toLocaleString()}원 손실`;
+    showFloatingText(`-${loss.toLocaleString()}`, '#ff9c9c');
+    if(failCount >= 5){
+      winRate = Math.min(0.5, winRate + 0.10);
       failCount = 0;
-      winRate = 0.35;
-      balanceDisplay.innerHTML = `💰 보유 금액: ${balance.toLocaleString()}원`;
-      resultDisplay.innerHTML = "";
     }
+  }
 
-    // 💸 플로팅 텍스트 (배팅할 때마다 표시)
-    function showFloatingText(text, color) {
-      const span = document.createElement("span");
-      span.classList.add("floating-text");
-      span.style.color = color;
-      span.innerText = text;
+  updateDisplays();
 
-      // 랜덤 위치
-      span.style.left = Math.random() * (window.innerWidth - 100) + "px";
-      span.style.top = Math.random() * (window.innerHeight - 100) + "px";
+  // Auto reset on bankruptcy or reaching goal
+  if(balance <= 0){
+    setTimeout(()=> {
+      alert('💀 파산하셨습니다. 게임을 초기화합니다.');
+      resetGame();
+    }, 80);
+  } else if(balance >= 5000000){
+    setTimeout(()=> {
+      alert('🎉 목표 달성! 게임을 초기화합니다.');
+      resetGame();
+    }, 80);
+  }
+}
 
-      document.body.appendChild(span);
-      setTimeout(() => span.remove(), 1200);
+/* Attach click handlers — guarantee user gesture before audio playback attempts */
+btnOdd.addEventListener('click', () => doPlay('홀'));
+btnEven.addEventListener('click', () => doPlay('짝'));
+
+/* initialize display */
+updateDisplays();
+
+/* Optional: try to unlock WebAudio on first user gesture (some mobile browsers require gesture) */
+function unlockAudioOnFirstGesture(){
+  const handler = async () => {
+    // try a tiny synth to unlock
+    const ctx = ensureAudioContext();
+    if(ctx && ctx.state === 'suspended'){
+      try { await ctx.resume(); } catch(e) {}
     }
-  </script>
+    // try to play a silent short buffer on audio elements to warm them
+    [aBet,aWin,aLose].forEach(el=>{
+      try{ el.play().then(()=>el.pause()).catch(()=>{}); }catch(e){}
+    });
+    window.removeEventListener('pointerdown', handler);
+  };
+  window.addEventListener('pointerdown', handler, {once:true});
+}
+unlockAudioOnFirstGesture();
+
+</script>
 </body>
 </html>
