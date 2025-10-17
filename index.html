@@ -11,6 +11,7 @@
     color: white;
     text-align: center;
     padding-top: 50px;
+    overflow: hidden;
     transition: background 0.6s ease;
   }
   h1 { font-size: 28px; margin-bottom: 10px; }
@@ -32,21 +33,26 @@
   }
   button:hover { transform: scale(1.1); background-color: #2575fc; }
 
-  /* 승패 시 시각 효과 */
-  .win-flash {
-    animation: winFlash 0.6s ease;
+  /* 시각 효과 */
+  .flash {
+    animation: flash 0.3s;
   }
-  .lose-flash {
-    animation: loseFlash 0.6s ease;
+  @keyframes flash {
+    0% { background-color: #00ff88; }
+    100% { background: linear-gradient(135deg, #2b5876, #4e4376); }
   }
 
-  @keyframes winFlash {
-    0% { background: #00ff99; }
-    100% { background: linear-gradient(135deg, #2b5876, #4e4376); }
+  /* 돈 증감 표시 */
+  .floating-text {
+    position: absolute;
+    font-size: 24px;
+    font-weight: bold;
+    pointer-events: none;
+    animation: floatUp 1s ease-out forwards;
   }
-  @keyframes loseFlash {
-    0% { background: #ff3b3b; }
-    100% { background: linear-gradient(135deg, #2b5876, #4e4376); }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-80px); }
   }
 </style>
 </head>
@@ -64,6 +70,7 @@
   <div id="result"></div>
 
   <!-- 효과음 -->
+  <audio id="betSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
   <audio id="winSound" src="https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg" preload="auto"></audio>
   <audio id="loseSound" src="https://actions.google.com/sounds/v1/cartoon/slap.ogg" preload="auto"></audio>
 
@@ -74,6 +81,7 @@
 
     const balanceDisplay = document.getElementById("balance");
     const resultDisplay = document.getElementById("result");
+    const betSound = document.getElementById("betSound");
     const winSound = document.getElementById("winSound");
     const loseSound = document.getElementById("loseSound");
 
@@ -85,21 +93,21 @@
         return;
       }
 
-      if (bet > balance * 2) {
-        alert("⚠️ 배팅 금액은 보유금의 2배 이하여야 합니다!");
+      if (balance <= bet * 0.5) {
+        alert("⚠️ 보유금이 너무 적습니다!");
         return;
       }
 
-      if (balance <= bet * 2.5) {
-        alert("⚠️ 보유금이 부족하여 배팅할 수 없습니다!");
-        return;
-      }
+      // 배팅 시작 시 효과음 & 시각 효과
+      document.body.classList.add("flash");
+      setTimeout(() => document.body.classList.remove("flash"), 300);
+      betSound.currentTime = 0;
+      betSound.play();
 
+      // 게임 결과 계산
       const random = Math.random();
       const outcome = random < winRate ? choice : (choice === '홀' ? '짝' : '홀');
       const isWin = choice === outcome;
-
-      document.body.classList.remove("win-flash", "lose-flash");
 
       if (isWin) {
         const gain = bet * 2;
@@ -107,21 +115,21 @@
         resultDisplay.innerHTML = `✅ 승리! ${gain.toLocaleString()}원 획득!`;
         winSound.currentTime = 0;
         winSound.play();
-        document.body.classList.add("win-flash");
         failCount = 0;
-        winRate = Math.max(0.25, winRate - 0.02); // 승리 시 약간 확률 낮춤
+        winRate = Math.max(0.25, winRate - 0.02);
+        showFloatingText(`+${gain.toLocaleString()}`, "lime");
       } else {
         const loss = bet * 2.5;
         balance -= loss;
         resultDisplay.innerHTML = `❌ 패배... ${loss.toLocaleString()}원 손실`;
         loseSound.currentTime = 0;
         loseSound.play();
-        document.body.classList.add("lose-flash");
         failCount++;
         if (failCount >= 5) {
-          winRate = Math.min(0.5, winRate + 0.1); // 실패 5회 시 확률 증가
+          winRate = Math.min(0.5, winRate + 0.1);
           failCount = 0;
         }
+        showFloatingText(`-${loss.toLocaleString()}`, "red");
       }
 
       balanceDisplay.innerHTML = `💰 보유 금액: ${balance.toLocaleString()}원`;
@@ -142,7 +150,21 @@
       winRate = 0.35;
       balanceDisplay.innerHTML = `💰 보유 금액: ${balance.toLocaleString()}원`;
       resultDisplay.innerHTML = "";
-      document.body.style.background = "linear-gradient(135deg, #2b5876, #4e4376)";
+    }
+
+    // 화면 아무 곳에 +금액 / -금액 표시
+    function showFloatingText(text, color) {
+      const span = document.createElement("span");
+      span.classList.add("floating-text");
+      span.style.color = color;
+      span.innerText = text;
+
+      // 화면 랜덤 위치
+      span.style.left = Math.random() * (window.innerWidth - 100) + "px";
+      span.style.top = Math.random() * (window.innerHeight - 100) + "px";
+
+      document.body.appendChild(span);
+      setTimeout(() => span.remove(), 1000);
     }
   </script>
 </body>
