@@ -12,7 +12,7 @@
     text-align: center;
     padding-top: 50px;
     overflow: hidden;
-    transition: background 0.6s ease;
+    transition: background 0.5s ease;
   }
   h1 { font-size: 28px; margin-bottom: 10px; }
   #balance, #goal { font-size: 22px; margin: 8px; }
@@ -35,24 +35,24 @@
 
   /* 시각 효과 */
   .flash {
-    animation: flash 0.3s;
+    animation: flash 0.25s;
   }
   @keyframes flash {
-    0% { background-color: #00ff88; }
+    0% { background-color: rgba(255,255,255,0.7); }
     100% { background: linear-gradient(135deg, #2b5876, #4e4376); }
   }
 
-  /* 돈 증감 표시 */
+  /* 플로팅 텍스트 */
   .floating-text {
     position: absolute;
     font-size: 24px;
     font-weight: bold;
     pointer-events: none;
-    animation: floatUp 1s ease-out forwards;
+    animation: floatUp 1.2s ease-out forwards;
   }
   @keyframes floatUp {
     0% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-80px); }
+    100% { opacity: 0; transform: translateY(-100px); }
   }
 </style>
 </head>
@@ -69,15 +69,15 @@
   </div>
   <div id="result"></div>
 
-  <!-- 효과음 -->
-  <audio id="betSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
-  <audio id="winSound" src="https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg" preload="auto"></audio>
-  <audio id="loseSound" src="https://actions.google.com/sounds/v1/cartoon/slap.ogg" preload="auto"></audio>
+  <!-- 🎧 효과음 (고음질) -->
+  <audio id="betSound" src="https://assets.mixkit.co/sfx/preview/mixkit-game-click-1114.mp3" preload="auto"></audio>
+  <audio id="winSound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chime-2015.mp3" preload="auto"></audio>
+  <audio id="loseSound" src="https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.mp3" preload="auto"></audio>
 
   <script>
     let balance = 500000;
     let failCount = 0;
-    let winRate = 0.35; // 초기 성공 확률 35%
+    let winRate = 0.35;
 
     const balanceDisplay = document.getElementById("balance");
     const resultDisplay = document.getElementById("result");
@@ -98,13 +98,13 @@
         return;
       }
 
-      // 배팅 시작 시 효과음 & 시각 효과
-      document.body.classList.add("flash");
-      setTimeout(() => document.body.classList.remove("flash"), 300);
+      // 🔊 배팅 사운드 & 시각 효과
       betSound.currentTime = 0;
       betSound.play();
+      document.body.classList.add("flash");
+      setTimeout(() => document.body.classList.remove("flash"), 250);
 
-      // 게임 결과 계산
+      // 🔢 결과 계산
       const random = Math.random();
       const outcome = random < winRate ? choice : (choice === '홀' ? '짝' : '홀');
       const isWin = choice === outcome;
@@ -119,7 +119,7 @@
         winRate = Math.max(0.25, winRate - 0.02);
         showFloatingText(`+${gain.toLocaleString()}`, "lime");
       } else {
-        const loss = bet * 2.5;
+        const loss = bet * 1.5;
         balance -= loss;
         resultDisplay.innerHTML = `❌ 패배... ${loss.toLocaleString()}원 손실`;
         loseSound.currentTime = 0;
@@ -134,7 +134,7 @@
 
       balanceDisplay.innerHTML = `💰 보유 금액: ${balance.toLocaleString()}원`;
 
-      // 파산 or 목표 달성 시 초기화
+      // 💀 파산 or 🎉 목표 달성 시 초기화
       if (balance <= 0) {
         alert("💀 파산하셨습니다! 다시 시작합니다.");
         resetGame();
@@ -152,19 +152,19 @@
       resultDisplay.innerHTML = "";
     }
 
-    // 화면 아무 곳에 +금액 / -금액 표시
+    // 💸 플로팅 텍스트 (배팅할 때마다 표시)
     function showFloatingText(text, color) {
       const span = document.createElement("span");
       span.classList.add("floating-text");
       span.style.color = color;
       span.innerText = text;
 
-      // 화면 랜덤 위치
+      // 랜덤 위치
       span.style.left = Math.random() * (window.innerWidth - 100) + "px";
       span.style.top = Math.random() * (window.innerHeight - 100) + "px";
 
       document.body.appendChild(span);
-      setTimeout(() => span.remove(), 1000);
+      setTimeout(() => span.remove(), 1200);
     }
   </script>
 </body>
