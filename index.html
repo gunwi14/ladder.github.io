@@ -11,11 +11,11 @@
     color: white;
     text-align: center;
     padding-top: 50px;
-    transition: background 0.5s ease;
+    transition: background 0.6s ease;
   }
   h1 { font-size: 28px; margin-bottom: 10px; }
-  #balance { font-size: 24px; margin: 10px; }
-  #result { font-size: 20px; margin: 20px; transition: all 0.5s ease; }
+  #balance, #goal { font-size: 22px; margin: 8px; }
+  #result { font-size: 20px; margin: 25px; transition: all 0.5s ease; }
   input[type="number"] {
     padding: 10px; border-radius: 5px; border: none; font-size: 16px; width: 150px; text-align: center;
   }
@@ -31,11 +31,21 @@
     transition: all 0.3s;
   }
   button:hover { transform: scale(1.1); background-color: #2575fc; }
-  .flash {
-    animation: flash 0.5s;
+
+  /* 승패 시 시각 효과 */
+  .win-flash {
+    animation: winFlash 0.6s ease;
   }
-  @keyframes flash {
-    0% { background: #00ff88; }
+  .lose-flash {
+    animation: loseFlash 0.6s ease;
+  }
+
+  @keyframes winFlash {
+    0% { background: #00ff99; }
+    100% { background: linear-gradient(135deg, #2b5876, #4e4376); }
+  }
+  @keyframes loseFlash {
+    0% { background: #ff3b3b; }
     100% { background: linear-gradient(135deg, #2b5876, #4e4376); }
   }
 </style>
@@ -43,6 +53,7 @@
 <body>
   <h1>🎲 홀짝 도박 시뮬레이션 🎲</h1>
   <div id="balance">💰 보유 금액: 500,000원</div>
+  <div id="goal">🎯 목표 금액: 5,000,000원</div>
   <div>
     <input type="number" id="bet" placeholder="배팅 금액 입력" min="1">
   </div>
@@ -51,11 +62,10 @@
     <button onclick="playGame('짝')">짝</button>
   </div>
   <div id="result"></div>
-  <div id="probability">현재 성공 확률: 35%</div>
 
   <!-- 효과음 -->
-  <audio id="winSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
-  <audio id="loseSound" src="https://actions.google.com/sounds/v1/cartoon/boing.ogg" preload="auto"></audio>
+  <audio id="winSound" src="https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg" preload="auto"></audio>
+  <audio id="loseSound" src="https://actions.google.com/sounds/v1/cartoon/slap.ogg" preload="auto"></audio>
 
   <script>
     let balance = 500000;
@@ -64,7 +74,6 @@
 
     const balanceDisplay = document.getElementById("balance");
     const resultDisplay = document.getElementById("result");
-    const probabilityDisplay = document.getElementById("probability");
     const winSound = document.getElementById("winSound");
     const loseSound = document.getElementById("loseSound");
 
@@ -81,7 +90,7 @@
         return;
       }
 
-      if (balance <= bet * 3) {
+      if (balance <= bet * 2.5) {
         alert("⚠️ 보유금이 부족하여 배팅할 수 없습니다!");
         return;
       }
@@ -90,7 +99,7 @@
       const outcome = random < winRate ? choice : (choice === '홀' ? '짝' : '홀');
       const isWin = choice === outcome;
 
-      document.body.classList.remove("flash");
+      document.body.classList.remove("win-flash", "lose-flash");
 
       if (isWin) {
         const gain = bet * 2;
@@ -98,15 +107,16 @@
         resultDisplay.innerHTML = `✅ 승리! ${gain.toLocaleString()}원 획득!`;
         winSound.currentTime = 0;
         winSound.play();
+        document.body.classList.add("win-flash");
         failCount = 0;
         winRate = Math.max(0.25, winRate - 0.02); // 승리 시 약간 확률 낮춤
-        document.body.classList.add("flash");
       } else {
-        const loss = bet * 3;
+        const loss = bet * 2.5;
         balance -= loss;
         resultDisplay.innerHTML = `❌ 패배... ${loss.toLocaleString()}원 손실`;
         loseSound.currentTime = 0;
         loseSound.play();
+        document.body.classList.add("lose-flash");
         failCount++;
         if (failCount >= 5) {
           winRate = Math.min(0.5, winRate + 0.1); // 실패 5회 시 확률 증가
@@ -115,7 +125,6 @@
       }
 
       balanceDisplay.innerHTML = `💰 보유 금액: ${balance.toLocaleString()}원`;
-      probabilityDisplay.innerHTML = `현재 성공 확률: ${(winRate * 100).toFixed(1)}%`;
 
       // 파산 or 목표 달성 시 초기화
       if (balance <= 0) {
@@ -132,7 +141,6 @@
       failCount = 0;
       winRate = 0.35;
       balanceDisplay.innerHTML = `💰 보유 금액: ${balance.toLocaleString()}원`;
-      probabilityDisplay.innerHTML = `현재 성공 확률: ${(winRate * 100).toFixed(1)}%`;
       resultDisplay.innerHTML = "";
       document.body.style.background = "linear-gradient(135deg, #2b5876, #4e4376)";
     }
