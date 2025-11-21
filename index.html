@@ -210,12 +210,35 @@ async function doPlay(choice){
 
   updateDisplays();
 
-  if(balance <= 0){
-    setTimeout(()=> {
-      alert('💀 파산하셨습니다. 게임을 초기화합니다.');
+  /* 🔥 파산 시 해킹당한 듯한 패러디 연출 */
+  if (balance <= 0) {
+    setTimeout(() => {
+
+      const fakeIP =
+        `${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
+
+      const fakeHash = [...Array(32)]
+        .map(() => "abcdef0123456789"[Math.floor(Math.random() * 16)])
+        .join("");
+
+      const fakePort = Math.floor(1000 + Math.random() * 9000);
+
+      alert(
+        "💀 파산하셨습니다.\n" +
+        "⚠️ 보안 경고: 계정이 침해된 것 같습니다!\n\n" +
+        "===== 보안 로그 =====\n" +
+        `• 외부 접속 감지: ${fakeIP}:${fakePort}\n` +
+        `• 무단 접근 시도 코드: ${fakeHash}\n` +
+        "• 데이터 전송: 차단됨\n" +
+        "• 방화벽 규칙 업데이트 완료\n" +
+        "=====================\n\n" +
+        "시스템이 재부팅됩니다..."
+      );
+
       resetGame();
     }, 80);
-  } else if(balance >= 5000000){
+  } 
+  else if(balance >= 5000000){
     setTimeout(()=> {
       alert('🎉 목표 달성! 게임을 초기화합니다.');
       resetGame();
