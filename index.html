@@ -1,4 +1,4 @@
-DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
@@ -172,7 +172,9 @@ async function doPlay(choice){
     alert('최소 베팅 금액은 1,000원입니다.');
     return;
   }
-  if(bet > balance && balance <= 0){
+
+  /* 🔥 버그 해결: 잔액보다 큰 금액 베팅 불가 */
+  if (bet > balance || balance <= 0) {
     alert('잔액이 부족합니다.');
     return;
   }
@@ -180,8 +182,6 @@ async function doPlay(choice){
   playSound('bet');
   panel.classList.add('flash');
   setTimeout(()=> panel.classList.remove('flash'), 180);
-
-  // (이 부분 삭제됨: 베팅 금액 플로팅 효과)
 
   const r = Math.random();
   const outcome = (r < winRate) ? choice : (choice === '홀' ? '짝' : '홀');
