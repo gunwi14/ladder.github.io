@@ -1,277 +1,491 @@
 <!DOCTYPE html>
+
 <html lang="ko">
+
 <head>
+
 <meta charset="utf-8" />
+
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>홀짝 도박 시뮬레이션 — 랭킹판 추가</title>
+
+<title>홀짝 도박 시뮬레이션 — 사운드 안정화 버전</title>
+
 <style>
+
   body {
+
     font-family: Arial, sans-serif;
+
     background: linear-gradient(135deg,#2b5876,#4e4376);
+
     color: white;
+
     text-align: center;
+
     padding-top: 36px;
+
     overflow: hidden;
+
   }
+
   .card {
+
     width: 380px;
+
     margin: 20px auto;
+
     background: rgba(255,255,255,0.06);
+
     border-radius: 12px;
+
     padding: 22px;
+
     box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+
   }
+
   h1 { margin: 0 0 8px 0; font-size: 22px; }
-  #balance { margin: 6px 0; font-size: 18px; color: #ffd166; }
+
+  #balance,#goal { margin: 6px 0; font-size: 18px; color: #ffd166; }
+
   .controls { margin-top: 12px; }
+
   input[type="number"]{
+
     width:160px;padding:8px;border-radius:6px;border:none;text-align:right;font-size:16px;
+
   }
+
   button {
+
     padding:10px 18px;margin:10px;border-radius:8px;border:none;background:#ffb703;color:#112;
+
     font-weight:700;cursor:pointer;font-size:16px;
+
   }
+
   button:hover{transform:translateY(-3px);transition:all .12s}
+
   #result { margin-top:12px; font-size:16px; min-height:36px; }
-  .floating-text { position:absolute; font-size:22px; font-weight:800; pointer-events:none; animation:floatUp 1.2s ease-out forwards; text-shadow:0 2px 8px rgba(0,0,0,0.6);}  
+
+  .floating-text { position:absolute; font-size:22px; font-weight:800; pointer-events:none; animation:floatUp 1.2s ease-out forwards; text-shadow:0 2px 8px rgba(0,0,0,0.6);}
+
   @keyframes floatUp { 0%{opacity:1; transform:translateY(0) scale(1)} 100%{opacity:0; transform:translateY(-120px) scale(1.05)} }
+
   .flash { animation: screenFlash .18s ease; }
+
   @keyframes screenFlash { 0%{filter:brightness(1.6)} 100%{filter:brightness(1)} }
+
   .smallnote{font-size:12px;color:#dbeafe;margin-top:6px}
 
-  /* ---- 랭킹 UI ---- */
-  #rankingPanel {
-    position: fixed;
-    right: 20px;
-    top: 20px;
-    width: 230px;
-    background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(6px);
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-    text-align: left;
-  }
-  #rankingPanel h2 {
-    margin-top: 0;
-    font-size: 18px;
-    text-align: center;
-  }
-  .rank-item {
-    margin: 6px 0;
-    padding: 6px 10px;
-    background: rgba(0,0,0,0.25);
-    border-radius: 8px;
-    font-size: 14px;
-  }
 </style>
+
 </head>
+
 <body>
-  <div id="rankingPanel">
-    <h2>🏆 랭킹</h2>
-    <div id="rankingList"></div>
-  </div>
 
-  <div id="namePrompt" class="card" style="width:300px;margin-top:40px;">
-  <h2>닉네임 입력</h2>
-  <input id="playerNameInput" style="padding:8px;width:80%;border-radius:6px;border:none;text-align:center;font-size:16px;"/>
-  <button onclick="startGame()">시작</button>
-</div>
+  <div class="card" id="panel">
 
-<div class="card" id="panel">
     <h1>🎲 홀짝 도박 시뮬레이션</h1>
+
     <div id="balance">💰 보유 금액: 500,000원</div>
 
+    <div id="goal">🎯 목표 금액: 5,000,000원</div>
+
+
+
     <div class="controls">
+
       <div>
+
         베팅 금액: <input id="bet" type="number" min="1000" value="10000" step="1000"> 원
+
       </div>
+
       <div style="margin-top:10px">
+
         <button id="btnOdd">홀</button>
+
         <button id="btnEven">짝</button>
+
       </div>
+
       <div id="result" aria-live="polite"></div>
-      <div class="smallnote">※ 최소 베팅금액 1,000원 / 성공: +2배, 실패: -1.5배 (파산 시 자동 초기화)</div>
+
+      <div class="smallnote">※ 최소 베팅금액 1,000원 / 성공: +2배, 실패: -1.5배 (자동 초기화: 파산 또는 목표 달성)</div>
+
     </div>
+
   </div>
 
+
+
   <audio id="audioBet" crossorigin="anonymous"></audio>
+
   <audio id="audioWin" crossorigin="anonymous"></audio>
+
   <audio id="audioLose" crossorigin="anonymous"></audio>
 
+
+
 <script>
-/* 기존 오디오 및 게임 로직 그대로 유지 */
+
 const audioFiles = {
+
   bet: 'https://assets.mixkit.co/sfx/preview/mixkit-game-click-1114.mp3',
+
   win: 'https://assets.mixkit.co/sfx/preview/mixkit-winning-chime-2015.mp3',
+
   lose:'https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.mp3'
+
 };
 
+
+
 const aBet = document.getElementById('audioBet');
+
 const aWin = document.getElementById('audioWin');
+
 const aLose = document.getElementById('audioLose');
+
 aBet.src = audioFiles.bet;
+
 aWin.src = audioFiles.win;
+
 aLose.src = audioFiles.lose;
+
 aBet.preload = 'auto'; aWin.preload='auto'; aLose.preload='auto';
 
+
+
 let audioCtx = null;
+
 function ensureAudioContext(){
-  if(!audioCtx){ try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; } }
+
+  if(!audioCtx){
+
+    try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+
+    catch(e){ audioCtx = null; }
+
+  }
+
   return audioCtx;
-}
-function synthTone({freq=440, duration=0.18, type='sine', gain=0.12}){
-  const ctx = ensureAudioContext();
-  if(!ctx) return;
-  const o = ctx.createOscillator();
-  const g = ctx.createGain();
-  o.type = type; o.frequency.value = freq;
-  g.gain.value = gain;
-  o.connect(g); g.connect(ctx.destination);
-  const now = ctx.currentTime;
-  o.start(now);
-  g.gain.setValueAtTime(gain, now);
-  g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  o.stop(now + duration + 0.02);
-}
-async function playSound(kind){
-  let el = null;
-  if(kind === 'bet') el = aBet;
-  if(kind === 'win') el = aWin;
-  if(kind === 'lose') el = aLose;
-  if(el){
-    try{ el.currentTime = 0; const p = el.play(); if(p !== undefined) await p; return; }catch(err){}
-  }
-  if(kind === 'bet'){ synthTone({freq:880,duration:0.06,gain:0.06,type:'square'}); }
-  else if(kind === 'win'){
-    synthTone({freq:880,duration:0.18,gain:0.12,type:'sine'});
-    setTimeout(()=>synthTone({freq:1320,duration:0.12,gain:0.09,type:'sine'}),90);
-  }
-  else if(kind === 'lose'){
-    synthTone({freq:160,duration:0.20,gain:0.18,type:'sawtooth'});
-    setTimeout(()=>synthTone({freq:120,duration:0.18,gain:0.12,type:'sawtooth'}),90);
-  }
+
 }
 
-/* ---- 닉네임 ---- */
-let playerName = '';
-function startGame(){
-  const input = document.getElementById('playerNameInput').value.trim();
-  if(!input){ alert('닉네임을 입력하세요.'); return; }
-  playerName = input;
-  document.getElementById('namePrompt').style.display = 'none';
+function synthTone({freq=440, duration=0.18, type='sine', gain=0.12}){
+
+  const ctx = ensureAudioContext();
+
+  if(!ctx) return;
+
+  const o = ctx.createOscillator();
+
+  const g = ctx.createGain();
+
+  o.type = type; o.frequency.value = freq;
+
+  g.gain.value = gain;
+
+  o.connect(g); g.connect(ctx.destination);
+
+  const now = ctx.currentTime;
+
+  o.start(now);
+
+  g.gain.setValueAtTime(gain, now);
+
+  g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+  o.stop(now + duration + 0.02);
+
 }
+
+
+
+async function playSound(kind){
+
+  let el = null;
+
+  if(kind === 'bet') el = aBet;
+
+  if(kind === 'win') el = aWin;
+
+  if(kind === 'lose') el = aLose;
+
+  if(el){
+
+    try{
+
+      el.currentTime = 0;
+
+      const p = el.play();
+
+      if(p !== undefined){ await p; return; }
+
+      else return;
+
+    } catch(err){}
+
+  }
+
+  if(kind === 'bet'){
+
+    synthTone({freq:880,duration:0.06,gain:0.06,type:'square'});
+
+  } else if(kind === 'win'){
+
+    synthTone({freq:880,duration:0.18,gain:0.12,type:'sine'});
+
+    setTimeout(()=>synthTone({freq:1320,duration:0.12,gain:0.09,type:'sine'}),90);
+
+  } else if(kind === 'lose'){
+
+    synthTone({freq:160,duration:0.20,gain:0.18,type:'sawtooth'});
+
+    setTimeout(()=>synthTone({freq:120,duration:0.18,gain:0.12,type:'sawtooth'}),90);
+
+  }
+
+}
+
+
 
 /* ---- 게임 로직 ---- */
+
 let balance = 500000;
+
 let failCount = 0;
+
 let winRate = 0.35;
 
+
+
 const balanceEl = document.getElementById('balance');
+
+const goalEl = document.getElementById('goal');
+
 const resultEl = document.getElementById('result');
+
 const panel = document.getElementById('panel');
+
 const btnOdd = document.getElementById('btnOdd');
+
 const btnEven = document.getElementById('btnEven');
+
 const betInput = document.getElementById('bet');
 
-/* ---- 랭킹 데이터 ---- */
-let rankings = JSON.parse(localStorage.getItem('rankings') || '[]');
 
-function updateRanking(){
-  const list = document.getElementById('rankingList');
-  list.innerHTML = '';
-  rankings
-    .sort((a,b)=> b.score - a.score)
-    .slice(0,10)
-    .forEach((r,i)=>{
-      const div = document.createElement('div');
-      div.className = 'rank-item';
-      div.textContent = `${i+1}위 | ${r.score.toLocaleString()}원`;
-      list.appendChild(div);
-    });
+
+function updateDisplays(){
+
+  balanceEl.textContent = `💰 보유 금액: ${balance.toLocaleString()}원`;
+
+  goalEl.textContent = `🎯 목표 금액: 5,000,000원`;
+
 }
 
-function updateDisplays(){ balanceEl.textContent = `💰 보유 금액: ${balance.toLocaleString()}원`; }
+
 
 function showFloatingText(text, color){
+
   const span = document.createElement('div');
+
   span.className = 'floating-text';
+
   span.style.color = color;
+
   span.innerText = text;
+
   const padding = 40;
-  span.style.left = (Math.random()*(window.innerWidth - padding*2) + padding)+'px';
-  span.style.top = (Math.random()*(window.innerHeight - padding*2) + padding)+'px';
+
+  const left = Math.floor(Math.random()*(window.innerWidth - padding*2)) + padding;
+
+  const top  = Math.floor(Math.random()*(window.innerHeight - padding*2)) + padding;
+
+  span.style.left = left + 'px';
+
+  span.style.top = top + 'px';
+
   document.body.appendChild(span);
+
   setTimeout(()=> span.remove(), 1200);
+
 }
+
+
 
 function resetGame(){
-  rankings.push({ name: playerName, score: balance });
-  localStorage.setItem('rankings', JSON.stringify(rankings));(){
-  rankings.push({ score: balance });
-  updateRanking();
+
   balance = 500000;
+
   failCount = 0;
+
   winRate = 0.35;
+
   betInput.value = 10000;
+
   updateDisplays();
+
   resultEl.innerHTML = '';
+
 }
+
+
 
 async function doPlay(choice){
+
   const bet = Number(betInput.value);
-  if(isNaN(bet) || bet < 1000){ alert('최소 베팅 금액은 1,000원입니다.'); return; }
-  if(bet > balance){ alert('잔액이 부족합니다.'); return; }
+
+  if(isNaN(bet) || bet < 1000){
+
+    alert('최소 베팅 금액은 1,000원입니다.');
+
+    return;
+
+  }
+
+
+
+  /* 🔥 버그 해결: 잔액보다 큰 금액 베팅 불가 */
+
+  if (bet > balance || balance <= 0) {
+
+    alert('잔액이 부족합니다.');
+
+    return;
+
+  }
+
+
 
   playSound('bet');
+
   panel.classList.add('flash');
+
   setTimeout(()=> panel.classList.remove('flash'), 180);
 
+
+
   const r = Math.random();
+
   const outcome = (r < winRate) ? choice : (choice === '홀' ? '짝' : '홀');
+
   const isWin = (outcome === choice);
 
+
+
   if(isWin){
+
     const gain = Math.floor(bet * 2);
+
     balance += gain;
+
     failCount = 0;
+
     await playSound('win');
-    resultEl.innerHTML = `✅ 승리! +${gain.toLocaleString()}원`;
+
+    resultEl.innerHTML = `✅ 승리! +${gain.toLocaleString()}원 획득`;
+
     showFloatingText(`+${gain.toLocaleString()}`, '#9cff9c');
-    winRate = Math.max(0.25, winRate - 0.02);
+
+    winRate = Math.max(0.25, (winRate - 0.02));
+
   } else {
+
     const loss = Math.floor(bet * 1.5);
+
     balance -= loss;
+
     failCount++;
+
     await playSound('lose');
-    resultEl.innerHTML = `❌ 패배... -${loss.toLocaleString()}원`;
+
+    resultEl.innerHTML = `❌ 패배... -${loss.toLocaleString()}원 손실`;
+
     showFloatingText(`-${loss.toLocaleString()}`, '#ff9c9c');
-    if(failCount >= 5){ winRate = Math.min(0.5, winRate + 0.10); failCount = 0; }
+
+    if(failCount >= 5){
+
+      winRate = Math.min(0.5, winRate + 0.10);
+
+      failCount = 0;
+
+    }
+
   }
+
+
 
   updateDisplays();
 
+
+
   if(balance <= 0){
-    setTimeout(()=>{ alert('💀 파산! 기록 후 초기화합니다.'); resetGame(); }, 80);
+
+    setTimeout(()=> {
+
+      alert('💀 파산하셨습니다. 게임을 초기화합니다.');
+
+      resetGame();
+
+    }, 80);
+
+  } else if(balance >= 5000000){
+
+    setTimeout(()=> {
+
+      alert('🎉 목표 달성! 게임을 초기화합니다.');
+
+      resetGame();
+
+    }, 80);
+
   }
+
 }
+
+
 
 btnOdd.addEventListener('click', () => doPlay('홀'));
+
 btnEven.addEventListener('click', () => doPlay('짝'));
+
 updateDisplays();
 
+
+
 function unlockAudioOnFirstGesture(){
+
   const handler = async () => {
+
     const ctx = ensureAudioContext();
+
     if(ctx && ctx.state === 'suspended'){
+
       try { await ctx.resume(); } catch(e) {}
+
     }
-    [aBet,aWin,aLose].forEach(el=>{ try{ el.play().then(()=>el.pause()).catch(()=>{});}catch(e){} });
+
+    [aBet,aWin,aLose].forEach(el=>{
+
+      try{ el.play().then(()=>el.pause()).catch(()=>{}); }catch(e){}
+
+    });
+
     window.removeEventListener('pointerdown', handler);
+
   };
+
   window.addEventListener('pointerdown', handler, {once:true});
+
 }
+
 unlockAudioOnFirstGesture();
+
 </script>
+
 </body>
+
 </html>
